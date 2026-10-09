@@ -12,11 +12,17 @@ import { DEMO_PLACES } from '../data/demoPlaces';
 import { ReportsService } from '../services/reportsService';
 import { DEFAULT_WEIGHTS } from '../services/scoringEngine';
 
-interface UserPreferences {
+import { CityDecisionEngine, type DisruptionTrigger } from '../services/cityDecisionEngine';
+
+export interface UserPreferences {
   budgetMaxINR: number;
+  durationHours: number;
   interests: string[];
   travelMode: TravelMode;
   startingLocation: string;
+  requireWheelchair?: boolean;
+  requireRestroom?: boolean;
+  avoidHazards?: boolean;
 }
 
 interface DemoContextType {
@@ -39,6 +45,7 @@ interface DemoContextType {
   updateReportStatus: (id: string, status: VerificationStatus) => void;
   upvoteReport: (id: string) => void;
   setActiveItinerary: (plan: ItineraryPlan | null) => void;
+  replanActiveItinerary: (trigger: DisruptionTrigger) => void;
   loadDemoScenario: () => void;
   resetAllData: () => void;
 }
@@ -57,9 +64,13 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [userPreferences, setUserPreferences] = useState<UserPreferences>({
     budgetMaxINR: 500,
+    durationHours: 4.5,
     interests: ['Food', 'Heritage', 'Culture', 'Photography'],
-    travelMode: 'Drive',
-    startingLocation: 'Deccan Gymkhana, Pune'
+    travelMode: 'Two-wheeler',
+    startingLocation: 'Shivajinagar Station, Pune',
+    requireWheelchair: false,
+    requireRestroom: false,
+    avoidHazards: true
   });
 
   const [weather] = useState<WeatherSummary>({
@@ -109,69 +120,46 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setReports(updated);
   };
 
+  // Dynamic Replanning Trigger
+  const replanActiveItinerary = (trigger: DisruptionTrigger) => {
+    if (!activeItinerary) return;
+    const replanned = CityDecisionEngine.replanItinerary(activeItinerary, trigger, places, reports);
+    setActiveItinerary(replanned);
+  };
+
   // Hackathon Demo Scenario 1-Click Trigger
   const loadDemoScenario = () => {
-    setUserPreferences({
+    const demoPreferences: UserPreferences = {
       budgetMaxINR: 500,
-      interests: ['Food', 'Heritage', 'Culture', 'Photography'],
-      travelMode: 'Drive',
-      startingLocation: 'Deccan Gymkhana, Pune'
-    });
-
+      durationHours: 4.5,
+      interests: ['Heritage', 'Culture', 'Food'],
+      travelMode: 'Two-wheeler',
+      startingLocation: 'Shivajinagar Station, Pune',
+      requireWheelchair: false,
+      requireRestroom: true,
+      avoidHazards: true
+    };
+    setUserPreferences(demoPreferences);
     setComparePlaceIds(['pune-shaniwar-wada', 'pune-aga-khan-palace', 'pune-fc-road-food']);
 
-    // Set sample pre-generated itinerary
+    // Generate verified itinerary via signature CityDecisionEngine
+    const scenarioPlan = CityDecisionEngine.generateItinerary({
+      startingLocation: demoPreferences.startingLocation,
+      budgetINR: demoPreferences.budgetMaxINR,
+      durationHours: demoPreferences.durationHours,
+      interests: demoPreferences.interests,
+      travelMode: demoPreferences.travelMode,
+      requireWheelchair: demoPreferences.requireWheelchair,
+      requireRestroom: demoPreferences.requireRestroom,
+      availablePlaces: places,
+      activeReports: reports
+    });
+
     setActiveItinerary({
-      id: 'demo-scenario-itin',
-      title: 'Pune Heritage & Culinary Trail (Hackathon Demo)',
-      startingLocation: 'Deccan Gymkhana, Pune',
-      totalBudgetINR: 500,
-      estimatedCostINR: 225,
-      totalDurationHours: 6,
-      travelMode: 'Drive',
-      interests: ['Food', 'Heritage', 'Photography'],
-      items: [
-        {
-          id: 'sc-1',
-          placeId: 'pune-shaniwar-wada',
-          placeName: 'Shaniwar Wada',
-          category: 'Heritage',
-          estimatedCostINR: 25,
-          durationMinutes: 90,
-          suggestedTimeSlot: '09:00 AM - 10:30 AM',
-          travelTimeToNextMinutes: 15,
-          notes: 'Visit Dilli Darwaja and courtyard lawns. Wheelchair ramp available.',
-          hazardsNearbyCount: 1
-        },
-        {
-          id: 'sc-2',
-          placeId: 'pune-dagadusheth-temple',
-          placeName: 'Shreemant Dagadusheth Halwai Temple',
-          category: 'Culture',
-          estimatedCostINR: 0,
-          durationMinutes: 45,
-          suggestedTimeSlot: '10:45 AM - 11:30 AM',
-          travelTimeToNextMinutes: 20,
-          notes: 'Free entry. Dedicated senior/disability darshan lane.',
-          hazardsNearbyCount: 0
-        },
-        {
-          id: 'sc-3',
-          placeId: 'pune-fc-road-food',
-          placeName: 'FC Road Street Food Trail',
-          category: 'Food',
-          estimatedCostINR: 200,
-          durationMinutes: 90,
-          suggestedTimeSlot: '12:00 PM - 01:30 PM',
-          travelTimeToNextMinutes: 0,
-          notes: 'Enjoy SPDP and Filter Coffee at Hotel Vaishali (FC Road). Note: Pothole report logged nearby at Goodluck Chowk.',
-          hazardsNearbyCount: 1
-        }
-      ],
-      explanation: '[Demo Scenario] Optimized 3-stop Pune route within ₹500 budget. SafeRoute Lens flagged 1 road hazard near FC Road (rep-001: Pothole on Goodluck Chowk), providing alternate pedestrian route guidance.',
-      weatherWarning: 'Sunny with mild evening breeze. Ideal for morning heritage tour.',
-      isDemoData: true,
-      createdAt: new Date().toISOString()
+      ...scenarioPlan,
+      title: 'Pune Heritage & Street Gastronomy Trail (Evaluator Scenario)',
+      explanation: '[Evaluator Demo] Synthesized a 3-stop Pune route starting at Shivajinagar. Tested against active citizen hazard reports with full accessibility audits, selection rationales, and dynamic replanning triggers ready.',
+      isDemoData: true
     });
   };
 
@@ -205,6 +193,7 @@ export const DemoProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateReportStatus: handleUpdateReportStatus,
         upvoteReport: handleUpvoteReport,
         setActiveItinerary,
+        replanActiveItinerary,
         loadDemoScenario,
         resetAllData,
       }}

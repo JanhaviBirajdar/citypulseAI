@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import type { ReportCategory } from '../../types';
 import { useDemo } from '../../context/DemoContext';
+import { ReportsService } from '../../services/reportsService';
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -15,8 +16,6 @@ interface ReportModalProps {
 }
 
 export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
-  if (!isOpen) return null;
-
   const { addReport } = useDemo();
 
   const [category, setCategory] = useState<ReportCategory>('Road hazard');
@@ -26,7 +25,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => 
   const [reporterAlias, setReporterAlias] = useState('');
   const [additionalContext, setAdditionalContext] = useState('');
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [wasDuplicateNotification, setWasDuplicateNotification] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+
+  if (!isOpen) return null;
 
   const categories: ReportCategory[] = [
     'Road hazard',
@@ -41,34 +43,63 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !description.trim() || !locationName.trim()) {
-      setErrorMsg('Please complete all required fields (Title, Description, and Location).');
+    setErrorMsg('');
+
+    // Field Validation
+    const validation = ReportsService.validateReport({
+      title,
+      description,
+      locationName,
+      category
+    });
+
+    if (!validation.isValid) {
+      setErrorMsg(validation.errors[0]);
       return;
     }
 
-    const lat = 18.5204 + (Math.random() - 0.5) * 0.05;
-    const lng = 73.8567 + (Math.random() - 0.5) * 0.05;
+    const lat = 18.5204 + (Math.random() - 0.5) * 0.04;
+    const lng = 73.8567 + (Math.random() - 0.5) * 0.04;
 
-    addReport({
-      category,
-      title: title.trim(),
-      description: description.trim(),
-      locationName: locationName.trim(),
+    // Check for duplicate reports
+    const dupCheck = ReportsService.findDuplicateReport({
       lat,
       lng,
-      reporterAlias: reporterAlias.trim() || 'Anonymous_Citizen',
-      additionalContext: additionalContext.trim() || undefined
+      category,
+      title: title.trim()
     });
 
-    setSubmittedSuccess(true);
+    if (dupCheck.isDuplicate && dupCheck.matchedReport) {
+      // Automatically upvote existing report instead of cluttering duplicates
+      ReportsService.upvoteReport(dupCheck.matchedReport.id);
+      setWasDuplicateNotification(
+        `Similar report "${dupCheck.matchedReport.title}" already logged ~${dupCheck.distanceMeters}m away. We added your community upvote (now ${dupCheck.matchedReport.upvotes + 1} upvotes) to amplify consensus!`
+      );
+      setSubmittedSuccess(true);
+    } else {
+      addReport({
+        category,
+        title: title.trim(),
+        description: description.trim(),
+        locationName: locationName.trim(),
+        lat,
+        lng,
+        reporterAlias: reporterAlias.trim() || 'Anonymous_Citizen',
+        additionalContext: additionalContext.trim() || undefined
+      });
+      setWasDuplicateNotification(null);
+      setSubmittedSuccess(true);
+    }
+
     setTimeout(() => {
       setSubmittedSuccess(false);
+      setWasDuplicateNotification(null);
       onClose();
       setTitle('');
       setDescription('');
       setLocationName('');
       setAdditionalContext('');
-    }, 2000);
+    }, 2500);
   };
 
   return (
@@ -100,9 +131,17 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => 
               <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h4 className="text-base font-bold text-slate-900">Report Submitted Successfully!</h4>
-              <p className="text-xs text-slate-600 max-w-xs mx-auto">
-                Your report has been logged under status <strong className="text-amber-800 font-bold">Unverified</strong>. It is now stored in local browser storage and visible to fellow Pune commuters.
+              <h4 className="text-base font-bold text-slate-900">
+                {wasDuplicateNotification ? 'Duplicate Detected — Upvoted Existing Report!' : 'Report Submitted Successfully!'}
+              </h4>
+              <p className="text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+                {wasDuplicateNotification ? (
+                  <span>{wasDuplicateNotification}</span>
+                ) : (
+                  <span>
+                    Your report has been logged under status <strong className="text-amber-800 font-bold">Unverified</strong>. It is now stored in local browser storage and visible to fellow Pune commuters.
+                  </span>
+                )}
               </p>
             </div>
           ) : (

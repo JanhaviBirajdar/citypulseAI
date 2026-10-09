@@ -383,9 +383,12 @@ function CityParticles({ count = 30 }: { count?: number }) {
   const [positions] = useMemo(() => {
     const pos = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 6;
-      pos[i * 3 + 1] = Math.random() * 3.5;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 6;
+      const r1 = Math.sin(i * 12.9898) * 43758.5453;
+      const r2 = Math.sin(i * 78.233) * 43758.5453;
+      const r3 = Math.sin(i * 45.164) * 43758.5453;
+      pos[i * 3] = ((r1 - Math.floor(r1)) - 0.5) * 6;
+      pos[i * 3 + 1] = (r2 - Math.floor(r2)) * 3.5;
+      pos[i * 3 + 2] = ((r3 - Math.floor(r3)) - 0.5) * 6;
     }
     return [pos];
   }, [count]);
@@ -517,17 +520,14 @@ export const Hero3DCity: React.FC<Hero3DCityProps> = ({
   selectedMarkerId,
   resetSignal = 0
 }) => {
-  const [hasWebGl, setHasWebGl] = useState(true);
-
-  useEffect(() => {
+  const [hasWebGl] = useState<boolean>(() => {
     try {
       const canvas = document.createElement('canvas');
-      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-      if (!gl) setHasWebGl(false);
+      return Boolean(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
     } catch {
-      setHasWebGl(false);
+      return false;
     }
-  }, []);
+  });
 
   if (!hasWebGl) {
     // Graceful static fallback if WebGL is unavailable

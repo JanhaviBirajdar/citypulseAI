@@ -24,8 +24,6 @@ interface PlaceDetailModalProps {
 }
 
 export const PlaceDetailModal: React.FC<PlaceDetailModalProps> = ({ place, onClose }) => {
-  if (!place) return null;
-
   const {
     comparePlaceIds,
     toggleComparePlace,
@@ -33,6 +31,8 @@ export const PlaceDetailModal: React.FC<PlaceDetailModalProps> = ({ place, onClo
     matchWeights,
     reports
   } = useDemo();
+
+  if (!place) return null;
 
   const isCompared = comparePlaceIds.includes(place.id);
   const matchResult = calculateCityMatch(place, userPreferences.budgetMaxINR, matchWeights);

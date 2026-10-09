@@ -6,7 +6,7 @@ import {
   CheckCircle2,
   ShieldCheck,
   Info,
-  Map,
+  Globe,
   Sparkles
 } from 'lucide-react';
 import { useDemo } from '../context/DemoContext';
@@ -17,13 +17,16 @@ export const Settings: React.FC = () => {
 
   const [geminiKey, setGeminiKey] = useState('');
   const [mapsKey, setMapsKey] = useState('');
+  const [mapboxKey, setMapboxKey] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   useEffect(() => {
     const savedGemini = localStorage.getItem('citypulse_gemini_api_key') || '';
     const savedMaps = localStorage.getItem('citypulse_maps_api_key') || '';
+    const savedMapbox = localStorage.getItem('citypulse_mapbox_token') || import.meta.env.VITE_MAPBOX_ACCESS_TOKEN || '';
     setGeminiKey(savedGemini);
     setMapsKey(savedMaps);
+    setMapboxKey(savedMapbox);
   }, []);
 
   const handleSaveKeys = (e: React.FormEvent) => {
@@ -38,6 +41,12 @@ export const Settings: React.FC = () => {
       localStorage.setItem('citypulse_maps_api_key', mapsKey.trim());
     } else {
       localStorage.removeItem('citypulse_maps_api_key');
+    }
+
+    if (mapboxKey.trim()) {
+      localStorage.setItem('citypulse_mapbox_token', mapboxKey.trim());
+    } else {
+      localStorage.removeItem('citypulse_mapbox_token');
     }
 
     setSavedSuccess(true);
@@ -65,7 +74,7 @@ export const Settings: React.FC = () => {
           <SettingsIcon className="w-7 h-7 text-[#6344e7]" /> Platform Settings & Credentials
         </h1>
         <p className="text-xs text-slate-500 font-medium">
-          Configure Google Maps Platform & Gemini AI API keys, toggle reviewer moderation mode, or reset demo state.
+          Configure Mapbox GL, Google Gemini AI, and external services, toggle reviewer moderation mode, or reset demo state.
         </p>
       </div>
 
@@ -86,6 +95,23 @@ export const Settings: React.FC = () => {
         )}
 
         <form onSubmit={handleSaveKeys} className="space-y-4 text-xs">
+          {/* Mapbox Token */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-emerald-600" /> Mapbox Public Access Token
+            </label>
+            <input
+              type="text"
+              value={mapboxKey}
+              onChange={(e) => setMapboxKey(e.target.value)}
+              placeholder="pk.eyJ1Ijo... (Enables live Mapbox GL Streets, Satellite, & 3D Terrain)"
+              className="w-full bg-slate-50 text-slate-900 font-mono text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:bg-white focus:border-[#6344e7] focus:outline-none"
+            />
+            <p className="text-[10px] text-slate-500 mt-1">
+              Provides vector tile layers, 3D building pitch, satellite photography, and custom interactive markers.
+            </p>
+          </div>
+
           {/* Gemini API Key */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
@@ -95,28 +121,11 @@ export const Settings: React.FC = () => {
               type="password"
               value={geminiKey}
               onChange={(e) => setGeminiKey(e.target.value)}
-              placeholder="AIzaSy... (Leave empty to use deterministic DEMO AI generator)"
+              placeholder="AIzaSy... (Leave empty to use deterministic City Decision Engine)"
               className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:bg-white focus:border-[#6344e7] focus:outline-none"
             />
             <p className="text-[10px] text-slate-500 mt-1">
-              Powers AI itinerary generation, destination comparisons, and search summaries.
-            </p>
-          </div>
-
-          {/* Google Maps API Key */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-              <Map className="w-3.5 h-3.5 text-amber-500" /> Google Maps Platform API Key
-            </label>
-            <input
-              type="password"
-              value={mapsKey}
-              onChange={(e) => setMapsKey(e.target.value)}
-              placeholder="AIzaSy... (Leave empty to use interactive vector map fallback)"
-              className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:bg-white focus:border-[#6344e7] focus:outline-none"
-            />
-            <p className="text-[10px] text-slate-500 mt-1">
-              Powers live Google Maps JS SDK tiles and Places Autocomplete when credentials are valid.
+              Powers Gemini 1.5 Flash natural-language contextual explanations and itinerary synthesis.
             </p>
           </div>
 

@@ -121,6 +121,48 @@ export interface RouteOption {
   isRecommended: boolean;
 }
 
+export interface AlternativePlace {
+  id: string;
+  placeId: string;
+  name: string;
+  category: PlaceCategory;
+  area: string;
+  estimatedPriceINR: number;
+  tradeoffNote: string;
+  recommendedIf: string;
+}
+
+export interface ReplanningDiff {
+  id: string;
+  timestamp: string;
+  triggerEvent: string;
+  actionSummary: string;
+  previousStopsCount: number;
+  newStopsCount: number;
+  swappedStops: Array<{
+    previousPlaceName: string;
+    replacementPlaceName: string;
+    reason: string;
+  }>;
+  costDifferenceINR: number;
+  durationDifferenceMinutes: number;
+  reroutingNotes: string;
+}
+
+export interface DataProvenance {
+  sources: string[];
+  lastAudit: string;
+  evidenceConfidence: number; // 0-100%
+  knownLimitations: string[];
+}
+
+export interface ConstraintEvaluation {
+  isSatisfied: boolean;
+  unmetReason?: string;
+  suggestions?: string[];
+  feasibilityScore: number;
+}
+
 export interface ItineraryItem {
   id: string;
   placeId: string;
@@ -130,8 +172,13 @@ export interface ItineraryItem {
   durationMinutes: number;
   suggestedTimeSlot: string;
   travelTimeToNextMinutes?: number;
+  travelDistanceKmToNext?: number;
   notes?: string;
+  selectionRationale?: string;
   hazardsNearbyCount: number;
+  lat?: number;
+  lng?: number;
+  area?: string;
 }
 
 export interface ItineraryPlan {
@@ -140,7 +187,9 @@ export interface ItineraryPlan {
   startingLocation: string;
   totalBudgetINR: number;
   estimatedCostINR: number;
+  remainingBudgetINR?: number;
   totalDurationHours: number;
+  actualEstimatedDurationMinutes?: number;
   travelMode: TravelMode;
   interests: string[];
   items: ItineraryItem[];
@@ -148,6 +197,11 @@ export interface ItineraryPlan {
   weatherWarning?: string;
   isDemoData: boolean;
   createdAt: string;
+  selectionRationales?: Record<string, string>;
+  alternatives?: AlternativePlace[];
+  dataProvenance?: DataProvenance;
+  replanningHistory?: ReplanningDiff[];
+  constraintCheck?: ConstraintEvaluation;
 }
 
 export interface WeatherSummary {

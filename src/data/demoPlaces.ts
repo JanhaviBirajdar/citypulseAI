@@ -174,7 +174,7 @@ export const DEMO_PLACES: Place[] = [
     cleanlinessScore: 96,
     safetyEvidenceScore: 94,
     evidenceCoverage: 96,
-    imageUrl: 'https://images.unsplash.com/photo-1609766857041-ed402ea8069a?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://imgs.search.brave.com/7U5c1u5ijOroPISgYCkLqeLyNC7FIlxnux1zZFf-cA8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9zN2Fw/MS5zY2VuZTcuY29t/L2lzL2ltYWdlL2lu/Y3JlZGlibGVpbmRp/YS9kYWdkdXNoZXRo/LWhhbHdhaS1nYW5w/YXRpLXRlbXBsZS1w/dW5lLW1haGFyYXNo/dHJhLTItYXR0ci1o/ZXJvP3FsdD04MiZ0/cz0xNzQyMTY2MzE1/OTM3',
     description: 'One of India\'s most celebrated Lord Ganesha temples, adorned with gold ornaments and over a century of cultural heritage. Highly organized darshan with massive festival celebrations.',
     tags: ['Spiritual', 'Temple', 'Ganesha', 'Culture', 'Free Entry'],
     bestTime: 'Early Morning Darshan (06:30 - 08:00 AM)',
